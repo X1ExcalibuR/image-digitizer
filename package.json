@@ -1,0 +1,24 @@
+{
+  "name": "image-digitizer",
+  "version": "1.0.0",
+  "description": "Este proyecto es una aplicación web desarrollada para la materia **Comunicación de Datos**, la cual permitira tomar imágenes en formato analógo y las convierta en datos digitales mediante muestreo y cuantización de color, mostrando además métricas relevantes del proceso.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/X1ExcalibuR/image-digitizer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/X1ExcalibuR/image-digitizer/issues"
+  },
+  "homepage": "https://github.com/X1ExcalibuR/image-digitizer#readme",
+  "devDependencies": {
+    "tailwindcss": "^4.3.0"
+  }
+}
