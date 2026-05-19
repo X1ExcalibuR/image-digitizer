@@ -8,23 +8,27 @@
   </head>
 
   <body>
-    <div style="overflow: hidden; display: flex; align-items: center; justify-content: center;">
-
-  <div class="absolute inset-0 bg-linear-to-br from-indigo-600 via-purple-600 to-fuchsia-400 opacity-85"></div>
+    <div style="overflow: hidden; align-items: center; justify-content: center;">
+      <div class="absolute inset-0 bg-linear-to-br from-indigo-600 via-purple-600 to-fuchsia-400 opacity-85"></div>
 
   <div class="relative z-10 text-center px-12 py-10">
-    <p class="text-xs font-medium tracking-widest text-white/70 uppercase mb-3">
+    <p class="text-m font-medium tracking-widest text-white/85 uppercase mb-3">
       Universidad Tecnológica Nacional
     </p>
-    <h1 class="text-5xl font-medium text-white mb-3 leading-tight drop-shadow-lg">
+    <h1 class="text-5xl font-bold text-white mb-3 font-mono leading-tight drop-shadow-lg">
       Digitalizador de archivos
     </h1>
-    <p class="text-base text-white/75">
-      Comunicación de datos · 2026
+    <p class="text-2xl text-white/75">
+      Comunicación de Datos · 2026
     </p>
+    
+    <div class="mt-52 text-white">
+      <label for="imageUpload" class="block mb-2">Seleccione una imagen</label>
+      <input type="file" accept="image/*" class="border-2 p-2">
+    </div>
   </div>
 
-</div>
-    </div>
+  </div>
+  </div>
   </body>
 </html>
