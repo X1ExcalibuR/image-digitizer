@@ -1,34 +1,104 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <title>Digitalizador de Imagenes</title>
-  </head>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+        <title>Digitalizador de Imagenes</title>
+    </head>
 
-  <body>
-    <div style="overflow: hidden; align-items: center; justify-content: center;">
-      <div class="absolute inset-0 bg-linear-to-br from-indigo-600 via-purple-600 to-fuchsia-400 opacity-85"></div>
+    <body class="relative min-h-screen bg-linear-to-br from-indigo-600 via-purple-600 to-fuchsia-400 opacity-85">
 
-  <div class="relative z-10 text-center px-12 py-10">
-    <p class="text-m font-medium tracking-widest text-white/85 uppercase mb-3">
-      Universidad Tecnológica Nacional
-    </p>
-    <h1 class="text-5xl font-bold text-white mb-3 font-mono leading-tight drop-shadow-lg">
-      Digitalizador de archivos
-    </h1>
-    <p class="text-2xl text-white/75">
-      Comunicación de Datos · 2026
-    </p>
-    
-    <div class="mt-52 text-white">
-      <label for="imageUpload" class="block mb-2">Seleccione una imagen</label>
-      <input type="file" accept="image/*" class="border-2 p-2">
-    </div>
-  </div>
+        <div class="absolute inset-0 bg-black/20 backdrop-blur-[2px]"></div>
 
-  </div>
-  </div>
-  </body>
+        <div class="relative z-10 container mx-auto px-4 py-6">
+
+            <header class="text-center mb-12">
+                <p class="text-m font-medium tracking-widest text-white/85 uppercase mb-3">
+                    Universidad Tecnológica Nacional
+                </p>
+                <h1 class="text-5xl font-bold text-white mb-3 font-mono leading-tight drop-shadow-lg">
+                    Digitalizador de archivos
+                </h1>
+                <p class="text-2xl text-white/75">
+                    Comunicación de Datos · 2026
+                </p>
+            </header>
+
+            <div class="grid lg:grid-cols-3 gap-8 mb-12">
+
+                <div class="lg:col-span-1 bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-white/20">
+                    <h2 class="text-2xl font-bold text-white mb-6 text-center">Controles</h2>
+
+                    <div class="mb-6">
+                        <label for="imageUpload" class="block text-white font-semibold mb-2">Seleccione una imagen</label>
+                        <input type="file" id="imageUpload" accept="image/*" class="w-full px-4 py-2 rounded-lg border-2 border-white/30 bg-white/10 text-white file:mr-4 file:py-2 file:px-2 file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer">
+                    </div>
+
+                    <div class="mb-6 text-white">
+                        <label for="bitsSelector" class="block font-semibold mb-2">🎨 Profundidad de bits (cuantización):</label>
+                        <select id="bitsSelector" class="w-full px-4 py-2 rounded-lg border-2 border-white/30 bg-white/10 font-semibold cursor-pointer">
+                            <option value="24" class="bg-purple-900">24 bits (16.7M colores) - Original</option>
+                            <option value="16" class="bg-purple-800">16 bits (65K colores)</option>
+                            <option value="8" class="bg-purple-700">8 bits (256 colores)</option>
+                            <option value="4" class="bg-purple-600">4 bits (16 colores)</option>
+                            <option value="2" class="bg-purple-500">2 bits (4 colores)</option>
+                            <option value="1" class="bg-purple-400">1 bit (Blanco y Negro)</option>
+                        </select>
+                    </div>
+
+                    <button id="applyBtn" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounder-lg transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">🔄 Digitalizar imagen</button>
+                </div>
+
+
+
+                <div class="relative z-10 text-centers">
+                    <h3>📊 Métricas del proceso</h3>
+                    <div class="metric-item">
+                        <span class="metric-label">Resolución:</span>
+                        <span id="resolution" class="metric-value">-</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Profundidad original:</span>
+                        <span id="originalDepth" class="metric-value">-</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Profundidad digitalizada:</span>
+                        <span id="newDepth" class="metric-value">-</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Tamaño original:</span>
+                        <span id="originalSize" class="metric-value">-</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Tamaño digitalizado:</span>
+                        <span id="newSize" class="metric-value">-</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Tamaño comprimido (RLE):</span>
+                        <span id="compressedSize" class="metric-value">-</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Factor de compresión:</span>
+                        <span id="compressionRatio" class="metric-value">-</span>
+                    </div>
+                </div>
+                <div class="images-panel">
+                    <div class="image-box">
+                        <h3>🖼️ Imagen original (analógica digitalizada)</h3>
+                        <canvas id="originalCanvas" class="image-canvas"></canvas>
+                    </div>
+                    <div class="image-box">
+                        <h3>🎯 Imagen digitalizada (cuantizada)</h3>
+                        <canvas id="processedCanvas" class="image-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            <footer class="text-center text-white/80 text-m border-t pt-4">
+                <p>Muestreo (resolución original) + Cuantización (profundidad de bits) + Compresión RLE simulada</p>
+                <p>© 2026 - Grupo 1 - Comunicación de Datos UTN FRLP</p>
+            </footer>
+        </div>
+        <script src="src/main.js"></script>
+    </body>
 </html>
