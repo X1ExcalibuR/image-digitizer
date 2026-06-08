@@ -47,51 +47,65 @@
                         </select>
                     </div>
 
-                    <button id="applyBtn" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounder-lg transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">🔄 Digitalizar imagen</button>
+                    <button id="applyBtn" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounder-lg transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">Digitalizar imagen</button>
                 </div>
 
+                <div class="lg:col-span-2 bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-white/20">
+                    <h2 class="text-2xl font-bold text-white text-center pb-6">Métricas del proceso</h2>
 
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center border-b border-white/20 pb-2">
+                                <span class="text-white/80 font-semibold">Resolución:</span>
+                                <span id="resolution" class="text-white font-mono font-bold">-</span>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-white/20 pb-2">
+                                <span class="text-white/80 font-semibold">Profundidad original:</span>
+                                <span id="originalDepth" class="text-white font-mono font-bold">-</span>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-white/20 pb-2">
+                                <span class="text-white/80 font-semibold">Profundidad digitalizada:</span>
+                                <span id="newDepth" class="text-white font-mono font-bold">-</span>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-white/20 pb-2">
+                                <span class="text-white/80 font-semibold">Tamaño original:</span>
+                                <span id="originalSize" class="text-white font-mono font-bold">-</span>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center border-b border-white/20 pb-2">
+                                <span class="text-white/80 font-semibold">Tamaño digitalizado:</span>
+                                <span id="newSize" class="text-white font-mono font-bold">-</span>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-white/20 pb-2">
+                                <span class="text-white/80 font-semibold">Tamaño comprimido (RLE):</span>
+                                <span id="compressedSize" class="text-white font-mono font-bold">-</span>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-white/20 pb-2">
+                                <span class="text-white/80 font-semibold">Factor de compresión:</span>
+                                <span id="compressionRatio" class="text-white font-mono font-bold">-</span>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="relative z-10 text-centers">
-                    <h3>📊 Métricas del proceso</h3>
-                    <div class="metric-item">
-                        <span class="metric-label">Resolución:</span>
-                        <span id="resolution" class="metric-value">-</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Profundidad original:</span>
-                        <span id="originalDepth" class="metric-value">-</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Profundidad digitalizada:</span>
-                        <span id="newDepth" class="metric-value">-</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Tamaño original:</span>
-                        <span id="originalSize" class="metric-value">-</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Tamaño digitalizado:</span>
-                        <span id="newSize" class="metric-value">-</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Tamaño comprimido (RLE):</span>
-                        <span id="compressedSize" class="metric-value">-</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Factor de compresión:</span>
-                        <span id="compressionRatio" class="metric-value">-</span>
-                    </div>
                 </div>
-                <div class="images-panel">
-                    <div class="image-box">
-                        <h3>🖼️ Imagen original (analógica digitalizada)</h3>
-                        <canvas id="originalCanvas" class="image-canvas"></canvas>
+            </div>     
+            
+            <div class="grid md:grid-cols-2 gap-8 mb-12">
+                <div class="bg-white/10 backdrop-blur/10 rounded-2xl p-6 shadow-xl border border-white/20">
+                    <h3 class="text-xl font-bold text-white mb-4 text-center">Imagen original (analógica digitalizada)</h3>
+                    <div class="flex justify-center">
+                        <canvas id="originalCanvas" class="max-w-full h-auto rounded-lg shadow-lg bg-gray-900/50"></canvas>
                     </div>
-                    <div class="image-box">
-                        <h3>🎯 Imagen digitalizada (cuantizada)</h3>
-                        <canvas id="processedCanvas" class="image-canvas"></canvas>
+                    <p class="text-xs text-white/60 text-center mt-3">Imagen cargada (muestreo original)</p>
+                </div>
+
+                <div class="bg-white/10 backdrop-blur/10 rounded-2xl p-6 shadow-xl border border-white/20">
+                    <h3 class="text-xl font-bold text-white mb-4 text-center">Imagen digitalizada (cuantizada)</h3>
+                    <div class="flex justify-center">
+                        <canvas id="processedCanvas" class="max-w-full h-auto rounded-lg shadow-lg bg-gray-900/50"></canvas>
                     </div>
+                    <p class="text-xs text-white/60 text-center mt-3">Imagen procesada (cuantización + RLE)</p>
                 </div>
             </div>
             <footer class="text-center text-white/80 text-m border-t pt-4">
