@@ -20,9 +20,6 @@
                 <h1 class="text-5xl font-bold text-white mb-3 font-mono leading-tight drop-shadow-lg">
                     Digitalizador de archivos
                 </h1>
-                <p class="text-2xl text-white/75">
-                    Comunicación de Datos · 2026
-                </p>
             </header>
 
             <div class="grid lg:grid-cols-3 gap-8 mb-12">
@@ -30,13 +27,24 @@
                 <div class="lg:col-span-1 bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-white/20">
                     <h2 class="text-2xl font-bold text-white mb-6 text-center">Controles</h2>
 
-                    <div class="mb-6">
+                    <div class="mb-4">
                         <label for="imageUpload" class="block text-white font-semibold mb-2">Seleccione una imagen</label>
                         <input type="file" id="imageUpload" accept="image/*" class="w-full px-4 py-2 rounded-lg border-2 border-white/30 bg-white/10 text-white file:mr-4 file:py-2 file:px-2 file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer">
                     </div>
 
-                    <div class="mb-6 text-white">
-                        <label for="bitsSelector" class="block font-semibold mb-2">🎨 Profundidad de bits (cuantización):</label>
+                    <div class="mb-4 text-white">
+                        <label for="resampleSelector" class="block text-white font-semibold mb-2">Muestreo (resolución)</label>
+                        <select id="resampleSelector" class="w-full px-4 py-2 rounded-lg border-2 border-white/30 bg-white/10 font-semibold cursor-pointer">
+                            <option value="1" class="bg-indigo-800">Original (100%)</option>
+                            <option value="0.5" class="bg-indigo-700">1/2 (50%)</option>                            
+                            <option value="0.25" class="bg-indigo-600">1/4 (25%)</option>
+                            <option value="0.125" class="bg-indigo-500">1/8 (12.5%)</option>
+                            <option value="0.0625" class="bg-indigo-400">1/16 (6.25%)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4 text-white">
+                        <label for="bitsSelector" class="block font-semibold mb-2">Profundidad de bits (cuantización)</label>
                         <select id="bitsSelector" class="w-full px-4 py-2 rounded-lg border-2 border-white/30 bg-white/10 font-semibold cursor-pointer">
                             <option value="24" class="bg-purple-900">24 bits (16.7M colores) - Original</option>
                             <option value="16" class="bg-purple-800">16 bits (65K colores)</option>
@@ -47,17 +55,24 @@
                         </select>
                     </div>
 
-                    <button id="applyBtn" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounder-lg transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">Digitalizar imagen</button>
+
+                    <button id="applyBtn" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed mb-4">Digitalizar imagen</button>
+
+                    <button id="downloadBtn" class="w-full bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">Descargar imagen comprimida</button>
                 </div>
 
                 <div class="lg:col-span-2 bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-white/20">
-                    <h2 class="text-2xl font-bold text-white text-center pb-6">Métricas del proceso</h2>
+                    <h2 class="text-2xl font-bold text-white text-center mb-6">Métricas del proceso</h2>
 
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div class="space-y-3">
+                    <div class="grid md:grid-cols-1 gap-4">
+                        <div class="space-y-4">
                             <div class="flex justify-between items-center border-b border-white/20 pb-2">
-                                <span class="text-white/80 font-semibold">Resolución:</span>
-                                <span id="resolution" class="text-white font-mono font-bold">-</span>
+                                <span class="text-white/80 font-semibold">Resolución original:</span>
+                                <span id="originalResolution" class="text-white font-mono font-bold">-</span>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-white/20 pb-2">
+                                <span class="text-white/80 font-semibold">Resolución digitalizada:</span>
+                                <span id="newResolution" class="text-white font-mono font-bold">-</span>
                             </div>
                             <div class="flex justify-between items-center border-b border-white/20 pb-2">
                                 <span class="text-white/80 font-semibold">Profundidad original:</span>
@@ -68,14 +83,12 @@
                                 <span id="newDepth" class="text-white font-mono font-bold">-</span>
                             </div>
                             <div class="flex justify-between items-center border-b border-white/20 pb-2">
-                                <span class="text-white/80 font-semibold">Tamaño original:</span>
+                                <span class="text-white/80 font-semibold">Tamaño original (disco):</span>
                                 <span id="originalSize" class="text-white font-mono font-bold">-</span>
                             </div>
-                        </div>
-                        <div class="space-y-3">
                             <div class="flex justify-between items-center border-b border-white/20 pb-2">
-                                <span class="text-white/80 font-semibold">Tamaño digitalizado:</span>
-                                <span id="newSize" class="text-white font-mono font-bold">-</span>
+                                <span class="text-white/80 font-semibold">Tamaño sin comprimir (RGB):</span>
+                                <span id="uncompressedSize" class="text-white font-mono font-bold">-</span>
                             </div>
                             <div class="flex justify-between items-center border-b border-white/20 pb-2">
                                 <span class="text-white/80 font-semibold">Tamaño comprimido (RLE):</span>
@@ -109,8 +122,7 @@
                 </div>
             </div>
             <footer class="text-center text-white/80 text-m border-t pt-4">
-                <p>Muestreo (resolución original) + Cuantización (profundidad de bits) + Compresión RLE simulada</p>
-                <p>© 2026 - Grupo 1 - Comunicación de Datos UTN FRLP</p>
+                <p>© 2026 - Grupo 1 - Alegre Alexis | Cruz Lucas | Garcia Ignacio | Sagasti Emilio | Silva Manuel - Comunicación de Datos S31 - UTN FRLP</p>
             </footer>
         </div>
         <script src="src/main.js"></script>

@@ -1,209 +1,237 @@
 // Variables globales
-let originalImage = null;
-let originalImageData = null; // Para guardar los datos originales del canvas
+let originalImageObj = null;      // Imagen original
 let originalFileSize = 0;
+let originalWidth = 0, originalHeight = 0;
+
+// Variables para almacenar el último resultado digitalizado y su compresión
+let lastQuantizedImageData = null;   // ImageData de la imagen final (muestreada + cuantizada)
+let lastCompressedData = null;       // Uint8Array con los datos comprimidos en RLE
+let lastCompressedSize = 0;
 
 // Elementos del DOM
 const imageUpload = document.getElementById('imageUpload');
 const bitsSelector = document.getElementById('bitsSelector');
+const resampleSelector = document.getElementById('resampleSelector');
 const applyBtn = document.getElementById('applyBtn');
+const downloadBtn = document.getElementById('downloadBtn');
 const originalCanvas = document.getElementById('originalCanvas');
 const processedCanvas = document.getElementById('processedCanvas');
-const resolutionSpan = document.getElementById('resolution');
+
+// Métricas
+const originalResolutionSpan = document.getElementById('originalResolution');
+const newResolutionSpan = document.getElementById('newResolution');
 const originalDepthSpan = document.getElementById('originalDepth');
 const newDepthSpan = document.getElementById('newDepth');
 const originalSizeSpan = document.getElementById('originalSize');
-const newSizeSpan = document.getElementById('newSize');
+const uncompressedSizeSpan = document.getElementById('uncompressedSize');
 const compressedSizeSpan = document.getElementById('compressedSize');
 const compressionRatioSpan = document.getElementById('compressionRatio');
 
-// Contextos de los canvas
+// Contextos
 let originalCtx = originalCanvas.getContext('2d');
 let processedCtx = processedCanvas.getContext('2d');
 
-// Evento: cargar imagen
+// ------------------------------------------------------------------
+// Cargar imagen
 imageUpload.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     originalFileSize = file.size;
     const reader = new FileReader();
-    
+
     reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
-            // Configurar canvas al tamaño de la imagen
-            originalCanvas.width = img.width;
-            originalCanvas.height = img.height;
-            processedCanvas.width = img.width;
-            processedCanvas.height = img.height;
-            
-            // Dibujar imagen original
+            originalImageObj = img;
+            originalWidth = img.width;
+            originalHeight = img.height;
+
+            originalCanvas.width = originalWidth;
+            originalCanvas.height = originalHeight;
             originalCtx.drawImage(img, 0, 0);
+
+            // Métricas iniciales
+            originalResolutionSpan.textContent = `${originalWidth} x ${originalHeight} px`;
+            originalDepthSpan.textContent = '24 bits';
+            originalSizeSpan.textContent = formatBytes(originalFileSize);
             
-            // Guardar copia de los datos originales
-            originalImageData = originalCtx.getImageData(0, 0, img.width, img.height);
+            // Limpiar métricas secundarias
+            newResolutionSpan.textContent = '-';
+            newDepthSpan.textContent = '-';
+            uncompressedSizeSpan.textContent = '-';
+            compressedSizeSpan.textContent = '-';
+            compressionRatioSpan.textContent = '-';
             
-            // Actualizar métricas iniciales
-            updateMetricsInitial(img.width, img.height);
-            
-            // Mostrar que la imagen está cargada
+            processedCtx.clearRect(0, 0, processedCanvas.width, processedCanvas.height);
             applyBtn.disabled = false;
+            downloadBtn.disabled = true;  // No hay datos comprimidos aún
+            lastQuantizedImageData = null;
+            lastCompressedData = null;
         };
         img.src = event.target.result;
     };
     reader.readAsDataURL(file);
 });
 
-// Evento: botón digitalizar
+// ------------------------------------------------------------------
+// Botón Digitalizar (muestreo + cuantización + compresión real)
 applyBtn.addEventListener('click', () => {
-    if (!originalImageData) {
+    if (!originalImageObj) {
         alert('Primero carga una imagen');
         return;
     }
+
+    const scale = parseFloat(resampleSelector.value);
+    let newWidth = Math.floor(originalWidth * scale);
+    let newHeight = Math.floor(originalHeight * scale);
+    if (newWidth < 1) newWidth = 1;
+    if (newHeight < 1) newHeight = 1;
+
+    // 1. Muestreo: redimensionar
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = newWidth;
+    tempCanvas.height = newHeight;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(originalImageObj, 0, 0, newWidth, newHeight);
+    const sampledImageData = tempCtx.getImageData(0, 0, newWidth, newHeight);
     
+    // 2. Cuantización
     const bits = parseInt(bitsSelector.value);
-    const processedData = cuantizarImagen(originalImageData, bits);
+    const quantizedImageData = cuantizarImageData(sampledImageData, bits);
+    lastQuantizedImageData = quantizedImageData;  // guardar para posible descarga
     
-    // Mostrar imagen procesada
-    processedCanvas.width = processedData.width;
-    processedCanvas.height = processedData.height;
-    processedCtx.putImageData(processedData, 0, 0);
+    // Mostrar en canvas
+    processedCanvas.width = newWidth;
+    processedCanvas.height = newHeight;
+    processedCtx.putImageData(quantizedImageData, 0, 0);
     
-    // Actualizar métricas después de la conversión
-    updateMetricsAfterConversion(bits, processedData);
+    // 3. Compresión RLE REAL sobre los datos cuantizados (solo RGB)
+    const compressedArray = comprimirRLE_real(quantizedImageData);
+    lastCompressedData = compressedArray;
+    lastCompressedSize = compressedArray.length;
+    
+    // 4. Actualizar métricas
+    newResolutionSpan.textContent = `${newWidth} x ${newHeight} px`;
+    newDepthSpan.textContent = `${bits} bits`;
+    
+    const uncompressedBytes = newWidth * newHeight * 3; // RGB
+    uncompressedSizeSpan.textContent = formatBytes(uncompressedBytes);
+    compressedSizeSpan.textContent = formatBytes(lastCompressedSize);
+    
+    const ratio = ((uncompressedBytes - lastCompressedSize) / uncompressedBytes * 100).toFixed(2);
+    compressionRatioSpan.textContent = `${ratio}% de ahorro`;
+    
+    // Habilitar botón de descarga
+    downloadBtn.disabled = false;
 });
 
-// Función principal: CUANTIZACIÓN (reducir profundidad de bits)
-function cuantizarImagen(imageData, bitsPorPixel) {
-    // Creamos una copia para no modificar la original
+// ------------------------------------------------------------------
+// Compresión RLE real: genera un Uint8Array con el formato [R, G, B, count] por cada run
+function comprimirRLE_real(imageData) {
+    const data = imageData.data; // RGBA, pero ignoramos alpha
+    const width = imageData.width;
+    const height = imageData.height;
+    const totalPixels = width * height;
+    
+    let runs = []; // almacenaremos objetos o directamente bytes
+    
+    let i = 0;
+    while (i < totalPixels) {
+        const r = data[i*4];
+        const g = data[i*4+1];
+        const b = data[i*4+2];
+        let count = 1;
+        let j = i + 1;
+        while (j < totalPixels && 
+               data[j*4] === r && 
+               data[j*4+1] === g && 
+               data[j*4+2] === b && 
+               count < 255) {   // limitamos count a 255 para caber en 1 byte
+            count++;
+            j++;
+        }
+        runs.push(r, g, b, count);
+        i = j;
+    }
+    
+    return new Uint8Array(runs);
+}
+
+// ------------------------------------------------------------------
+// Descargar el archivo comprimido (extensión .rle)
+downloadBtn.addEventListener('click', () => {
+    if (!lastCompressedData) {
+        alert('Primero digitalizá una imagen (botón "Digitalizar imagen")');
+        return;
+    }
+    
+    const blob = new Blob([lastCompressedData], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `imagen_digitalizada_${Date.now()}.rle`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+});
+
+// ------------------------------------------------------------------
+// Función de cuantización (igual que antes, pero adaptada para trabajar sobre ImageData)
+function cuantizarImageData(imageData, bitsPorPixel) {
     const newImageData = new ImageData(
         new Uint8ClampedArray(imageData.data),
         imageData.width,
         imageData.height
     );
-    
     const data = newImageData.data;
     
-    // Calcular niveles por canal de color
-    // bitsPorPixel puede ser 24 (8 por canal), 16 (5-6-5), 8 (3-3-2), 4, 2, 1
-    let bitsPorCanal;
+    if (bitsPorPixel === 24) return newImageData;
     
-    if (bitsPorPixel === 24) {
-        // Sin cambios, es el original
-        return newImageData;
-    } else if (bitsPorPixel === 16) {
-        // 5 bits para R, 6 para G, 5 para B (formato 565)
+    let bitsPorCanal;
+    if (bitsPorPixel === 16) {
         bitsPorCanal = { r: 5, g: 6, b: 5 };
     } else if (bitsPorPixel === 8) {
-        // 3 bits R, 3 bits G, 2 bits B
         bitsPorCanal = { r: 3, g: 3, b: 2 };
-    } else {
-        // Para 4, 2, 1 bits: distribuimos equitativamente
-        const bitsPorCanalTotal = Math.floor(bitsPorPixel / 3);
-        bitsPorCanal = { r: bitsPorCanalTotal, g: bitsPorCanalTotal, b: bitsPorCanalTotal };
-    }
-    
-    // Aplicar cuantización
-    for (let i = 0; i < data.length; i += 4) {
-        // Canal Rojo
-        if (bitsPorCanal.r > 0) {
-            const nivelesR = Math.pow(2, bitsPorCanal.r);
-            const factorR = 256 / nivelesR;
-            data[i] = Math.floor(data[i] / factorR) * factorR;
-        } else {
-            data[i] = 0;
-        }
-        
-        // Canal Verde
-        if (bitsPorCanal.g > 0) {
-            const nivelesG = Math.pow(2, bitsPorCanal.g);
-            const factorG = 256 / nivelesG;
-            data[i+1] = Math.floor(data[i+1] / factorG) * factorG;
-        } else {
-            data[i+1] = 0;
-        }
-        
-        // Canal Azul
-        if (bitsPorCanal.b > 0) {
-            const nivelesB = Math.pow(2, bitsPorCanal.b);
-            const factorB = 256 / nivelesB;
-            data[i+2] = Math.floor(data[i+2] / factorB) * factorB;
-        } else {
-            data[i+2] = 0;
-        }
-        
-        // Caso especial: 1 bit (blanco y negro)
-        if (bitsPorPixel === 1) {
+    } else if (bitsPorPixel === 1) {
+        for (let i = 0; i < data.length; i += 4) {
             const gris = (data[i] + data[i+1] + data[i+2]) / 3;
             const valor = gris > 127 ? 255 : 0;
             data[i] = valor;
             data[i+1] = valor;
             data[i+2] = valor;
         }
+        return newImageData;
+    } else {
+        const bitsPorCanalTotal = Math.floor(bitsPorPixel / 3);
+        bitsPorCanal = { r: bitsPorCanalTotal, g: bitsPorCanalTotal, b: bitsPorCanalTotal };
     }
     
+    for (let i = 0; i < data.length; i += 4) {
+        if (bitsPorCanal.r > 0) {
+            const niveles = Math.pow(2, bitsPorCanal.r);
+            const factor = 256 / niveles;
+            data[i] = Math.floor(data[i] / factor) * factor;
+        } else data[i] = 0;
+        
+        if (bitsPorCanal.g > 0) {
+            const niveles = Math.pow(2, bitsPorCanal.g);
+            const factor = 256 / niveles;
+            data[i+1] = Math.floor(data[i+1] / factor) * factor;
+        } else data[i+1] = 0;
+        
+        if (bitsPorCanal.b > 0) {
+            const niveles = Math.pow(2, bitsPorCanal.b);
+            const factor = 256 / niveles;
+            data[i+2] = Math.floor(data[i+2] / factor) * factor;
+        } else data[i+2] = 0;
+    }
     return newImageData;
 }
 
-// Actualizar métricas iniciales (cuando se carga la imagen)
-function updateMetricsInitial(width, height) {
-    resolutionSpan.textContent = `${width} x ${height} px (${width * height} MP)`;
-    originalDepthSpan.textContent = '24 bits (original)';
-    originalSizeSpan.textContent = formatBytes(originalFileSize);
-    
-    // Inicializar las otras métricas
-    newDepthSpan.textContent = '-';
-    newSizeSpan.textContent = '-';
-    compressedSizeSpan.textContent = '-';
-    compressionRatioSpan.textContent = '-';
-}
-
-// Actualizar métricas después de la conversión
-function updateMetricsAfterConversion(bits, processedData) {
-    // Actualizar profundidad
-    newDepthSpan.textContent = `${bits} bits (${Math.pow(2, bits)} colores máximos)`;
-    
-    // Calcular tamaño de la imagen digitalizada (sin comprimir)
-    const rawSize = processedData.data.length; // bytes (RGBA)
-    const sizeWithoutAlpha = rawSize * 0.75; // Solo RGB
-    newSizeSpan.textContent = formatBytes(sizeWithoutAlpha);
-    
-    // Calcular compresión RLE simulada
-    const rleResult = comprimirRLE(processedData.data);
-    compressedSizeSpan.textContent = formatBytes(rleResult.compressedSize);
-    
-    // Calcular factor de compresión
-    const ratio = ((rawSize - rleResult.compressedSize) / rawSize * 100).toFixed(2);
-    compressionRatioSpan.textContent = `${ratio}% (ahorro)`;
-}
-
-// Algoritmo de compresión RLE (Run-Length Encoding)
-function comprimirRLE(data) {
-    let compressedSize = 0;
-    let count = 1;
-    
-    for (let i = 0; i < data.length - 4; i += 4) {
-        // Comparamos píxel actual con el siguiente (solo RGB, ignoramos alpha)
-        if (data[i] === data[i+4] && 
-            data[i+1] === data[i+5] && 
-            data[i+2] === data[i+6]) {
-            count++;
-        } else {
-            // Cada par (valor, repetición) ocupa 2 bytes
-            compressedSize += 2;
-            count = 1;
-        }
-    }
-    compressedSize += 2; // Último grupo
-    
-    return {
-        compressedSize: compressedSize,
-        compressionRatio: (compressedSize / data.length * 100).toFixed(2)
-    };
-}
-
-// Utilidad: formatear bytes a KB/MB
+// ------------------------------------------------------------------
+// Utilidad: formateo de bytes
 function formatBytes(bytes) {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -212,5 +240,7 @@ function formatBytes(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// Deshabilitar botón hasta cargar imagen
+// Inicializar botones
 applyBtn.disabled = true;
+downloadBtn.disabled = true;
+console.log('Video de development de la pagina: https://youtu.be/dQw4w9WgXcQ?si=gea92JEixiNuHLci');
